@@ -1,9 +1,7 @@
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { createHardwareMcpServer } from "./server.js";
 import { D1Adapter, D1Database } from "./db/d1-adapter.js";
-import { SqliteAdapter } from "./db/sqlite-adapter.js";
 import { ProductRepository } from "./db/repository.js";
-import { CATALOG } from "./data/catalog.js";
 
 export interface Env {
   ENVIRONMENT?: string;
@@ -11,7 +9,7 @@ export interface Env {
   AFFILIATE_TAG_NEWEGG?: string;
   AFFILIATE_TAG_BESTBUY?: string;
   API_KEY?: string;
-  DB?: D1Database;
+  DB: D1Database;
 }
 
 export default {
@@ -57,7 +55,7 @@ export default {
             service: "SpecTrust MCP Server",
             version: "0.1.0",
             status: "ready",
-            database: env.DB ? "Cloudflare D1 (Edge SQLite)" : "Embedded SQLite",
+            database: "Cloudflare D1 (Edge SQLite)",
             transport: "Streamable HTTP (Web Standards / SSE)",
             endpoints: {
               mcp: "/mcp",
@@ -86,17 +84,21 @@ export default {
 
     // Handle MCP Streamable HTTP & SSE connections
     if (url.pathname === "/mcp" || url.pathname === "/sse" || url.pathname === "/messages") {
+      if (!env.DB) {
+        return new Response(JSON.stringify({ error: "Missing D1 database binding 'DB'." }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
       const affiliateTags = {
-        amazon: env.AFFILIATE_TAG_AMAZON || "pctrust01-20",
-        newegg: env.AFFILIATE_TAG_NEWEGG || "pctrust_mcp",
-        bestbuy: env.AFFILIATE_TAG_BESTBUY || "pctrust"
+        amazon: env.AFFILIATE_TAG_AMAZON || "spectrust-20",
+        newegg: env.AFFILIATE_TAG_NEWEGG || "spectrust",
+        bestbuy: env.AFFILIATE_TAG_BESTBUY || "spectrust"
       };
 
-      const adapter = env.DB ? new D1Adapter(env.DB) : new SqliteAdapter(":memory:");
+      const adapter = new D1Adapter(env.DB);
       const repository = new ProductRepository(adapter);
-      await repository.init();
-      await repository.seedIfEmpty(CATALOG);
-
       const server = createHardwareMcpServer(repository, affiliateTags);
 
       const transport = new WebStandardStreamableHTTPServerTransport({

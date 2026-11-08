@@ -15,7 +15,8 @@
     "start": "node dist/cli.js",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "test": "node --test dist/test/*.js"
+    "test": "node --test dist/test/*.test.js",
+    "simulate": "node dist/test/agent-simulation.js"
   },
   "keywords": [
     "mcp",

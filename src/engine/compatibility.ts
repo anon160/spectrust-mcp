@@ -10,19 +10,25 @@ import {
   PsuSpecsSchema,
   RamSpecsSchema
 } from "../types.js";
-import { CATALOG } from "../data/catalog.js";
+import { ProductRepository } from "../db/repository.js";
 
-export function evaluateBuildCompatibility(productIds: string[]): CompatibilityReport {
+export async function evaluateBuildCompatibility(
+  productIds: string[],
+  repository: ProductRepository
+): Promise<CompatibilityReport> {
   const issues: CompatibilityIssue[] = [];
   const selectedProducts: Product[] = [];
 
+  const foundProducts = await repository.getByIds(productIds);
+  const foundMap = new Map(foundProducts.map((p) => [p.id, p]));
+
   for (const id of productIds) {
-    const prod = CATALOG.find((p) => p.id === id);
+    const prod = foundMap.get(id);
     if (!prod) {
       issues.push({
         severity: "WARNING",
         component_a_id: id,
-        message: `Product ID '${id}' not found in verified catalog.`,
+        message: `Product ID '${id}' not found in verified database.`,
         remedy: "Verify product ID using search_products tool."
       });
     } else {
@@ -150,7 +156,6 @@ export function evaluateBuildCompatibility(productIds: string[]): CompatibilityR
       });
     }
 
-    // Cooler thermal capacity vs CPU TDP check
     if (coolerSpecs.max_tdp_dissipation_watts < cpuSpecs.tdp_watts) {
       issues.push({
         severity: "WARNING",
@@ -201,7 +206,6 @@ export function evaluateBuildCompatibility(productIds: string[]): CompatibilityR
       });
     }
 
-    // Check Case vs PSU form factor
     if (cases.length > 0) {
       const chasis = cases[0];
       const caseSpecs = chasis.specs as ReturnType<typeof CaseSpecsSchema.parse>;

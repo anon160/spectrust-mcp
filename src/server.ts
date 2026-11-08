@@ -1,11 +1,15 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { searchCatalog, getProductById, compareProducts } from "./engine/search.js";
+import { ProductRepository } from "./db/repository.js";
+import { compareProducts } from "./engine/search.js";
 import { evaluateBuildCompatibility } from "./engine/compatibility.js";
 import { generateCheckoutPermalink } from "./engine/permalinks.js";
 import { ComponentCategorySchema } from "./types.js";
 
-export function createHardwareMcpServer(affiliateTags?: Record<string, string>) {
+export function createHardwareMcpServer(
+  repository: ProductRepository,
+  affiliateTags?: Record<string, string>
+) {
   const server = new McpServer({
     name: "pc-trust-mcp",
     version: "0.1.0"
@@ -23,7 +27,7 @@ export function createHardwareMcpServer(affiliateTags?: Record<string, string>) 
       in_stock_only: z.boolean().optional().describe("Only return products with active stock at one or more merchants")
     },
     async (args) => {
-      const results = searchCatalog({
+      const results = await repository.search({
         category: args.category,
         query: args.query,
         max_price: args.max_price,
@@ -62,13 +66,13 @@ export function createHardwareMcpServer(affiliateTags?: Record<string, string>) 
       product_id: z.string().describe("The unique catalog product ID (e.g. 'cpu-amd-7800x3d', 'gpu-asus-tuf-4070ts')")
     },
     async ({ product_id }) => {
-      const product = getProductById(product_id);
+      const product = await repository.getById(product_id);
       if (!product) {
         return {
           content: [
             {
               type: "text",
-              text: JSON.stringify({ error: `Product '${product_id}' was not found in the verified catalog.` })
+              text: JSON.stringify({ error: `Product '${product_id}' was not found in the verified database.` })
             }
           ]
         };
@@ -93,7 +97,7 @@ export function createHardwareMcpServer(affiliateTags?: Record<string, string>) 
       product_ids: z.array(z.string()).min(2).describe("Array of product IDs in the PC build to test for compatibility")
     },
     async ({ product_ids }) => {
-      const report = evaluateBuildCompatibility(product_ids);
+      const report = await evaluateBuildCompatibility(product_ids, repository);
       return {
         content: [
           {
@@ -114,7 +118,7 @@ export function createHardwareMcpServer(affiliateTags?: Record<string, string>) 
     },
     async ({ product_ids }) => {
       try {
-        const result = compareProducts(product_ids);
+        const result = await compareProducts(product_ids, repository);
         return {
           content: [
             {
@@ -147,7 +151,7 @@ export function createHardwareMcpServer(affiliateTags?: Record<string, string>) 
     },
     async ({ product_id, quantity, preferred_merchant }) => {
       try {
-        const link = generateCheckoutPermalink(product_id, quantity, preferred_merchant, affiliateTags);
+        const link = await generateCheckoutPermalink(product_id, quantity, preferred_merchant, affiliateTags, repository);
         return {
           content: [
             {

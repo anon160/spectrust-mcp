@@ -8,3 +8,9 @@ ENVIRONMENT = "production"
 AFFILIATE_TAG_AMAZON = "pctrust01-20"
 AFFILIATE_TAG_NEWEGG = "pctrust_mcp"
 AFFILIATE_TAG_BESTBUY = "pctrust"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "pc-trust-db"
+database_id = "local-pc-trust-db"
+migrations_dir = "migrations"

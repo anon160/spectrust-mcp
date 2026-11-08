@@ -1,5 +1,9 @@
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { createHardwareMcpServer } from "./server.js";
+import { D1Adapter, D1Database } from "./db/d1-adapter.js";
+import { SqliteAdapter } from "./db/sqlite-adapter.js";
+import { ProductRepository } from "./db/repository.js";
+import { CATALOG } from "./data/catalog.js";
 
 export interface Env {
   ENVIRONMENT?: string;
@@ -7,6 +11,7 @@ export interface Env {
   AFFILIATE_TAG_NEWEGG?: string;
   AFFILIATE_TAG_BESTBUY?: string;
   API_KEY?: string;
+  DB?: D1Database;
 }
 
 export default {
@@ -52,6 +57,7 @@ export default {
             service: "PC Trust Layer MCP Server",
             version: "0.1.0",
             status: "ready",
+            database: env.DB ? "Cloudflare D1 (Edge SQLite)" : "Embedded SQLite",
             transport: "Streamable HTTP (Web Standards / SSE)",
             endpoints: {
               mcp: "/mcp",
@@ -86,7 +92,12 @@ export default {
         bestbuy: env.AFFILIATE_TAG_BESTBUY || "pctrust"
       };
 
-      const server = createHardwareMcpServer(affiliateTags);
+      const adapter = env.DB ? new D1Adapter(env.DB) : new SqliteAdapter(":memory:");
+      const repository = new ProductRepository(adapter);
+      await repository.init();
+      await repository.seedIfEmpty(CATALOG);
+
+      const server = createHardwareMcpServer(repository, affiliateTags);
 
       const transport = new WebStandardStreamableHTTPServerTransport({
         sessionIdGenerator: undefined, // Stateless edge mode

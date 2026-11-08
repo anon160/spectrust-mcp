@@ -1,4 +1,4 @@
-import { CATALOG } from "../data/catalog.js";
+import { ProductRepository } from "../db/repository.js";
 
 export interface PermalinkResult {
   product_id: string;
@@ -13,7 +13,7 @@ export interface PermalinkResult {
   affiliate_disclosure: string;
 }
 
-export function generateCheckoutPermalink(
+export async function generateCheckoutPermalink(
   productId: string,
   quantity: number = 1,
   preferredMerchant?: string,
@@ -21,11 +21,20 @@ export function generateCheckoutPermalink(
     amazon: "pctrust01-20",
     newegg: "pctrust_mcp",
     bestbuy: "pctrust"
+  },
+  repository?: ProductRepository
+): Promise<PermalinkResult> {
+  if (!repository) {
+    throw new Error("Repository required for checkout permalink generation.");
   }
-): PermalinkResult {
-  const product = CATALOG.find((p) => p.id === productId);
+
+  const product = await repository.getById(productId);
   if (!product) {
-    throw new Error(`Product '${productId}' not found in catalog.`);
+    throw new Error(`Product '${productId}' not found in database.`);
+  }
+
+  if (product.offers.length === 0) {
+    throw new Error(`No active merchant offers found for product '${productId}'.`);
   }
 
   let selectedOffer = product.offers[0];

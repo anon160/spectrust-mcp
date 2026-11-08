@@ -1,36 +1,51 @@
 # ⚡ SpecTrust: The Hardware Trust & Compatibility Layer for AI Agents
 
-> A neutral, multi-vendor, parametric spec-normalized hardware catalog and compatibility reasoning engine built for the Model Context Protocol (MCP).
+> A neutral, multi-vendor, parametric spec-normalized hardware catalog, compatibility reasoning engine, and Universal Commerce Protocol (UCP) oracle built for AI Agents and the Model Context Protocol (MCP).
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![MCP](https://img.shields.io/badge/MCP-Compatible-green.svg)](https://modelcontextprotocol.io)
+[![UCP](https://img.shields.io/badge/UCP-Compatible-orange.svg)](https://ucp.dev)
 
 ---
 
 ## 💡 Why SpecTrust Exists
 
-Vendor-specific MCP endpoints (Shopify, Salesforce, Amazon) are closed silos:
+Vendor-specific endpoints (Shopify, Salesforce, Amazon) are closed silos:
 * No single vendor will tell an AI agent to buy from a competitor.
 * No single vendor exposes honest defect, return rate, or VRM throttling data.
-* AI agents fail when reading unstructured, JavaScript-heavy retail product pages.
+* Generic commerce protocols (like UCP) handle carts and payments, but have zero domain knowledge of physical component clearance, socket matching, or electrical safety.
 
 **SpecTrust** provides:
 1. **Normalized Parametric Specs:** Dimensions in mm, TDP in watts, socket types, and PCIe lanes without marketing fluff.
 2. **Fraud-Weighted Trust Scores (1–100):** Spec accuracy, RMA reliability, and fake review resistance based on independent lab bench testing.
 3. **Deterministic Compatibility Checking:** Hardware-level validation (socket match, GPU length vs. case clearance, cooler height, PSU wattage headroom).
-4. **Multi-Merchant Checkout Permalinks:** Real-time stock status and direct pre-configured purchase links across Amazon, Newegg, and Best Buy with transparent affiliate attribution.
+4. **Universal Commerce Protocol (UCP) Pre-Flight Oracle:** Validate any UCP cart or checkout session against physical hardware safety rules before payments are triggered.
+5. **Dual-Mode Autonomous & Web Checkout:** Native multi-merchant UCP checkout sessions with AP2 (Agent Payments Protocol) cryptographic mandates, plus legacy browser affiliate permalinks.
 
 ---
 
 ## 🛠️ Tools Exposed to AI Agents
 
-| Tool | Description |
-| :--- | :--- |
-| `search_products` | Search verified components filtered by category, price, text query, and minimum trust score (1–100). |
-| `get_product_details` | Retrieve complete parametric specs, independent lab notes, known issues, and live vendor offers. |
-| `check_compatibility` | Analyze a list of component IDs for physical clearance, socket fit, cooler clearance, and PSU headroom. |
-| `compare_specs` | Side-by-side spec and trust metric comparison between 2 to 5 products. |
-| `create_checkout_permalink` | Generate an instant checkout permalink with stock verification and affiliate attribution. |
+| Tool | Protocol | Description |
+| :--- | :--- | :--- |
+| `search_products` | MCP | Search verified components filtered by category, price, text query, and minimum trust score (1–100). |
+| `get_product_details` | MCP | Retrieve complete parametric specs, independent lab notes, known issues, and live vendor offers. |
+| `check_compatibility` | MCP | Analyze a list of component IDs for physical clearance, socket fit, cooler clearance, and PSU headroom. |
+| `compare_specs` | MCP | Side-by-side spec and trust metric comparison between 2 to 5 products. |
+| `validate_ucp_cart` | UCP / MCP | Pre-flight validate a Universal Commerce Protocol (UCP) cart for hardware compatibility and trust scores before payment. |
+| `create_ucp_checkout_session` | UCP / AP2 | Initiate an autonomous, multi-merchant UCP checkout session with protocol-level facilitator attribution and an AP2 payment mandate. |
+| `create_checkout_permalink` | MCP / Web | Generate a fallback browser checkout permalink with real-time stock check and affiliate attribution. |
+
+---
+
+## 🌐 Universal Commerce Protocol (UCP) Discovery
+
+SpecTrust serves a standard UCP 1.0 Discovery Profile at:
+```http
+GET /.well-known/ucp
+```
+
+This manifest enables consumer AI assistants (e.g., Gemini, Claude) and retail agents to automatically discover SpecTrust as a hardware validation oracle and checkout session facilitator.
 
 ---
 

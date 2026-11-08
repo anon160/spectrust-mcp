@@ -2,6 +2,7 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import { createHardwareMcpServer } from "./server.js";
 import { D1Adapter, D1Database } from "./db/d1-adapter.js";
 import { ProductRepository } from "./db/repository.js";
+import { getUcpDiscoveryProfile } from "./ucp/engine.js";
 
 export interface Env {
   ENVIRONMENT?: string;
@@ -52,23 +53,26 @@ export default {
       return new Response(
         JSON.stringify(
           {
-            service: "SpecTrust MCP Server",
-            version: "0.1.0",
+            service: "SpecTrust MCP Server & UCP Oracle",
+            version: "0.2.0",
             status: "ready",
             database: "Cloudflare D1 (Edge SQLite)",
-            transport: "Streamable HTTP (Web Standards / SSE)",
+            transports: ["Streamable HTTP", "SSE", "UCP Discovery"],
             endpoints: {
               mcp: "/mcp",
-              sse: "/sse"
+              sse: "/sse",
+              ucp_discovery: "/.well-known/ucp"
             },
             tools_supported: [
               "search_products",
               "get_product_details",
               "check_compatibility",
               "compare_specs",
-              "create_checkout_permalink"
+              "create_checkout_permalink",
+              "validate_ucp_cart",
+              "create_ucp_checkout_session"
             ],
-            documentation: "Point Claude Desktop or your agent runtime to /mcp or /sse"
+            documentation: "Point Claude Desktop or your agent runtime to /mcp, /sse, or /.well-known/ucp"
           },
           null,
           2
@@ -80,6 +84,20 @@ export default {
           }
         }
       );
+    }
+
+    // UCP Standard Discovery Manifest (RFC-compliant profile)
+    if (url.pathname === "/.well-known/ucp") {
+      const hostUrl = `${url.protocol}//${url.host}`;
+      const profile = getUcpDiscoveryProfile(hostUrl);
+      return new Response(JSON.stringify(profile, null, 2), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Cache-Control": "public, max-age=3600"
+        }
+      });
     }
 
     // Handle MCP Streamable HTTP & SSE connections

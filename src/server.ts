@@ -5,6 +5,8 @@ import { compareProducts } from "./engine/search.js";
 import { evaluateBuildCompatibility } from "./engine/compatibility.js";
 import { generateCheckoutPermalink } from "./engine/permalinks.js";
 import { ComponentCategorySchema } from "./types.js";
+import { validateUcpCart, createUcpCheckoutSession } from "./ucp/engine.js";
+import { UcpCartSchema } from "./ucp/types.js";
 
 export function createHardwareMcpServer(
   repository: ProductRepository,
@@ -157,6 +159,78 @@ export function createHardwareMcpServer(
             {
               type: "text",
               text: JSON.stringify(link, null, 2)
+            }
+          ]
+        };
+      } catch (err: any) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ error: err.message })
+            }
+          ]
+        };
+      }
+    }
+  );
+
+  // 6. Tool: validate_ucp_cart
+  server.tool(
+    "validate_ucp_cart",
+    "Validate a Universal Commerce Protocol (UCP) cart for hardware compatibility (sockets, clearance, PSU wattage) and component trust scores before executing payment.",
+    {
+      cart: UcpCartSchema.describe("UCP Cart object containing line items with SKUs and quantities"),
+      min_trust_score: z.number().min(1).max(100).optional().default(70).describe("Minimum acceptable trust score threshold")
+    },
+    async ({ cart, min_trust_score }) => {
+      try {
+        const report = await validateUcpCart(cart, repository, min_trust_score);
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(report, null, 2)
+            }
+          ]
+        };
+      } catch (err: any) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ error: err.message })
+            }
+          ]
+        };
+      }
+    }
+  );
+
+  // 7. Tool: create_ucp_checkout_session
+  server.tool(
+    "create_ucp_checkout_session",
+    "Initiate an autonomous, native multi-merchant Universal Commerce Protocol (UCP) checkout session with protocol-level facilitator attribution and an AP2 payment mandate.",
+    {
+      product_ids: z.array(z.string()).min(1).describe("List of verified component product IDs to purchase"),
+      preferred_merchant: z.enum(["amazon", "newegg", "bestbuy"]).optional().describe("Optional preferred merchant"),
+      buyer_agent_id: z.string().optional().describe("ID of the AI buyer agent initiating the session")
+    },
+    async ({ product_ids, preferred_merchant, buyer_agent_id }) => {
+      try {
+        const session = await createUcpCheckoutSession(
+          {
+            product_ids,
+            preferred_merchant,
+            buyer_agent_id
+          },
+          repository
+        );
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(session, null, 2)
             }
           ]
         };

@@ -96,8 +96,8 @@ async function runAgentSimulation() {
   }
   console.log("\n");
 
-  // Step 5: Agent generates checkout permalink for the GPU
-  console.log("--- 5. Agent Generates Checkout Permalink ---");
+  // Step 5: Agent generates checkout permalink for the GPU (Legacy / Fallback mode)
+  console.log("--- 5. Agent Generates Checkout Permalink (Fallback Web Mode) ---");
   const checkoutResult = await client.callTool({
     name: "create_checkout_permalink",
     arguments: {
@@ -108,6 +108,66 @@ async function runAgentSimulation() {
   });
   console.log("Checkout link generated for user:");
   console.log(JSON.stringify(JSON.parse((checkoutResult.content as any)[0].text), null, 2));
+  console.log("\n");
+
+  // Step 6: Agent validates a Universal Commerce Protocol (UCP) Cart before payment
+  console.log("--- 6. Agent Validates Cart via Universal Commerce Protocol (validate_ucp_cart) ---");
+  const ucpCartValidation = await client.callTool({
+    name: "validate_ucp_cart",
+    arguments: {
+      cart: {
+        cart_id: "ucp-cart-sff-build-99",
+        currency: "USD",
+        line_items: [
+          { sku: "case-fractal-terra", quantity: 1 },
+          { sku: "mobo-gigabyte-b650i-aorus", quantity: 1 },
+          { sku: "psu-corsair-sf750-2024", quantity: 1 },
+          { sku: "gpu-sapphire-pulse-7800xt", quantity: 1 },
+          { sku: "cpu-amd-7600x", quantity: 1 }
+        ]
+      },
+      min_trust_score: 75
+    }
+  });
+  const ucpValidationResult = JSON.parse((ucpCartValidation.content as any)[0].text);
+  console.log("UCP Pre-Flight Cart Verification:");
+  console.log(` • Valid for Checkout: ${ucpValidationResult.valid_for_checkout ? '✅ YES' : '❌ NO'}`);
+  console.log(` • Hardware Compatible: ${ucpValidationResult.hardware_compatible ? '✅ YES' : '❌ NO'}`);
+  console.log(` • Total System TDP: ${ucpValidationResult.power_budget.total_estimated_tdp_watts}W`);
+  console.log(` • Recommended PSU: ${ucpValidationResult.power_budget.recommended_psu_wattage}W`);
+  console.log("\n");
+
+  // Step 7: Agent executes autonomous UCP Checkout Session with AP2 Mandate
+  console.log("--- 7. Agent Initiates Native UCP Checkout Session (create_ucp_checkout_session) ---");
+  const ucpSessionResult = await client.callTool({
+    name: "create_ucp_checkout_session",
+    arguments: {
+      product_ids: [
+        "case-fractal-terra",
+        "mobo-gigabyte-b650i-aorus",
+        "psu-corsair-sf750-2024",
+        "gpu-sapphire-pulse-7800xt",
+        "cpu-amd-7600x"
+      ],
+      buyer_agent_id: "agent-claude-desktop"
+    }
+  });
+  const ucpSession = JSON.parse((ucpSessionResult.content as any)[0].text);
+  console.log("UCP Multi-Merchant Checkout Session Created:");
+  console.log(` • Session ID: ${ucpSession.session_id}`);
+  console.log(` • Protocol Version: UCP ${ucpSession.ucp_version}`);
+  console.log(` • Facilitator ID: ${ucpSession.facilitator_id}`);
+  console.log(` • Grand Total: $${ucpSession.total_price_usd} ${ucpSession.currency}`);
+  console.log(` • Merchant Allocations (${ucpSession.allocations.length}):`);
+  for (const alloc of ucpSession.allocations) {
+    console.log(`   - Merchant: ${alloc.merchant.toUpperCase()} ($${alloc.merchant_subtotal_usd}) [${alloc.items.length} items]`);
+  }
+  console.log(" • AP2 Payment Mandate (Delegated Spend Authorization):");
+  console.log(`   - Mandate ID: ${ucpSession.ap2_payment_mandate.mandate_id}`);
+  console.log(`   - Authorized Ceiling: $${ucpSession.ap2_payment_mandate.max_authorized_usd} ${ucpSession.ap2_payment_mandate.currency}`);
+  console.log(`   - Status: ${ucpSession.ap2_payment_mandate.status}`);
+  console.log(`   - Scope: ${ucpSession.ap2_payment_mandate.delegation_scope}`);
+  console.log(`   - Expires At: ${ucpSession.ap2_payment_mandate.expires_at}`);
 
   await client.close();
   console.log("\n🎉 Simulation finished successfully!");

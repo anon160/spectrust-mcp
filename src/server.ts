@@ -11,7 +11,7 @@ export function createHardwareMcpServer(
   affiliateTags?: Record<string, string>
 ) {
   const server = new McpServer({
-    name: "pc-trust-mcp",
+    name: "spectrust",
     version: "0.1.0"
   });
 

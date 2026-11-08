@@ -1,4 +1,4 @@
-# ⚡ PC Trust MCP: Independent Hardware Trust Layer for AI Agents
+# ⚡ SpecTrust: The Hardware Trust & Compatibility Layer for AI Agents
 
 > A neutral, multi-vendor, parametric spec-normalized hardware catalog and compatibility reasoning engine built for the Model Context Protocol (MCP).
 
@@ -7,14 +7,14 @@
 
 ---
 
-## 💡 Why This Exists
+## 💡 Why SpecTrust Exists
 
 Vendor-specific MCP endpoints (Shopify, Salesforce, Amazon) are closed silos:
 * No single vendor will tell an AI agent to buy from a competitor.
 * No single vendor exposes honest defect, return rate, or VRM throttling data.
 * AI agents fail when reading unstructured, JavaScript-heavy retail product pages.
 
-**PC Trust MCP** provides:
+**SpecTrust** provides:
 1. **Normalized Parametric Specs:** Dimensions in mm, TDP in watts, socket types, and PCIe lanes without marketing fluff.
 2. **Fraud-Weighted Trust Scores (1–100):** Spec accuracy, RMA reliability, and fake review resistance based on independent lab bench testing.
 3. **Deterministic Compatibility Checking:** Hardware-level validation (socket match, GPU length vs. case clearance, cooler height, PSU wattage headroom).
@@ -36,16 +36,8 @@ Vendor-specific MCP endpoints (Shopify, Salesforce, Amazon) are closed silos:
 
 ## 🚀 Quickstart: Local Setup (Claude Desktop)
 
-### 1. Build from Source
-```bash
-git clone https://github.com/your-org/pc-trust-mcp.git
-cd pc-trust-mcp
-npm install
-npm run build
-```
-
-### 2. Add to Claude Desktop Configuration
-Add the server to your `claude_desktop_config.json`:
+### Local Configuration via NPX / Node
+Add SpecTrust to your `claude_desktop_config.json`:
 
 * **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
 * **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
@@ -54,9 +46,9 @@ Add the server to your `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "pc-trust": {
+    "spectrust": {
       "command": "node",
-      "args": ["/absolute/path/to/pc-trust-mcp/dist/cli.js"]
+      "args": ["/home/anon/Code/mcp/dist/cli.js"]
     }
   }
 }
@@ -64,31 +56,15 @@ Add the server to your `claude_desktop_config.json`:
 
 ---
 
-## ☁️ Zero-Cost Deployment to Cloudflare Workers
+## ☁️ Remote Cloudflare Workers Edge Connection
 
-This project natively implements the **Web Standards Streamable HTTP / SSE transport**, allowing you to deploy it to Cloudflare Workers for **$0.00/month** (100,000 free requests/day with **0ms cold start**).
+Agents and clients can connect to the hosted SpecTrust instance via **Streamable HTTP / SSE**:
 
-### 1. Authenticate with Cloudflare
-```bash
-npx wrangler login
-```
-
-### 2. Deploy to Edge
-```bash
-npm run deploy
-```
-
-Your MCP server will be immediately live globally at:
-```
-https://pc-trust-mcp.<your-subdomain>.workers.dev/mcp
-```
-
-### 3. Connect Remote Agents / Claude Desktop
 ```json
 {
   "mcpServers": {
-    "pc-trust-cloud": {
-      "url": "https://pc-trust-mcp.<your-subdomain>.workers.dev/mcp"
+    "spectrust-cloud": {
+      "url": "https://spectrust.<your-subdomain>.workers.dev/mcp"
     }
   }
 }
@@ -98,9 +74,10 @@ https://pc-trust-mcp.<your-subdomain>.workers.dev/mcp
 
 ## 🧪 Testing
 
-Run the test suite covering parametric filters, compatibility engine logic, and affiliate permalinks:
 ```bash
-npm test
+npm run build
+npm test         # Unit & database test suite
+npm run simulate # End-to-end agent simulation
 ```
 
 ---

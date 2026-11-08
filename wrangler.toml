@@ -1,16 +1,16 @@
-name = "pc-trust-mcp"
+name = "spectrust"
 main = "src/worker.ts"
 compatibility_date = "2024-11-01"
 compatibility_flags = ["nodejs_compat"]
 
 [vars]
 ENVIRONMENT = "production"
-AFFILIATE_TAG_AMAZON = "pctrust01-20"
-AFFILIATE_TAG_NEWEGG = "pctrust_mcp"
-AFFILIATE_TAG_BESTBUY = "pctrust"
+AFFILIATE_TAG_AMAZON = "spectrust-20"
+AFFILIATE_TAG_NEWEGG = "spectrust"
+AFFILIATE_TAG_BESTBUY = "spectrust"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "pc-trust-db"
-database_id = "local-pc-trust-db"
+database_name = "spectrust-db"
+database_id = "06b42554-9319-4643-95a4-00e03b9909c9"
 migrations_dir = "migrations"

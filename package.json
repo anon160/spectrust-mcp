@@ -1,11 +1,11 @@
 {
-  "name": "pc-trust-mcp",
+  "name": "spectrust-mcp",
   "version": "0.1.0",
-  "description": "Parametric spec-normalized hardware catalog and compatibility trust layer for AI agents",
+  "description": "SpecTrust: The neutral, multi-vendor hardware trust and compatibility layer for AI agents",
   "type": "module",
   "main": "dist/worker.js",
   "bin": {
-    "pc-trust-mcp": "./dist/cli.js"
+    "spectrust": "./dist/cli.js"
   },
   "files": [
     "dist"
@@ -21,6 +21,7 @@
   "keywords": [
     "mcp",
     "modelcontextprotocol",
+    "spectrust",
     "hardware",
     "pc-builder",
     "trust-score",

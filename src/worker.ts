@@ -54,7 +54,7 @@ export default {
       return new Response(
         JSON.stringify(
           {
-            service: "PC Trust Layer MCP Server",
+            service: "SpecTrust MCP Server",
             version: "0.1.0",
             status: "ready",
             database: env.DB ? "Cloudflare D1 (Edge SQLite)" : "Embedded SQLite",

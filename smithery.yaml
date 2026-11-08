@@ -1,0 +1,9 @@
+# Smithery configuration for SpecTrust
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties: {}
+  command: node
+  args:
+    - dist/cli.js

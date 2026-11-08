@@ -1,0 +1,40 @@
+{
+  "name": "pc-trust-mcp",
+  "version": "0.1.0",
+  "description": "Parametric spec-normalized hardware catalog and compatibility trust layer for AI agents",
+  "type": "module",
+  "main": "dist/worker.js",
+  "bin": {
+    "pc-trust-mcp": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli.js",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "node --test dist/test/*.js"
+  },
+  "keywords": [
+    "mcp",
+    "modelcontextprotocol",
+    "hardware",
+    "pc-builder",
+    "trust-score",
+    "cloudflare-workers"
+  ],
+  "author": "Antigravity",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261108.1",
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2",
+    "wrangler": "^4.158.0"
+  }
+}

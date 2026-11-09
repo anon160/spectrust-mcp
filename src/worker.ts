@@ -48,13 +48,15 @@ export default {
       }
     }
 
-    // Root info endpoint
+    // Root info and documentation endpoint
     if (url.pathname === "/" || url.pathname === "/health") {
+      const hostUrl = `${url.protocol}//${url.host}`;
       return new Response(
         JSON.stringify(
           {
             service: "SpecTrust MCP Server & UCP Oracle",
             version: "0.2.0",
+            description: "A neutral, multi-vendor hardware trust layer, parametric spec normalization catalog, and deterministic compatibility reasoning engine built for AI agents, the Model Context Protocol (MCP), and the Universal Commerce Protocol (UCP).",
             status: "ready",
             database: "Cloudflare D1 (Edge SQLite)",
             transports: ["Streamable HTTP", "SSE", "UCP Discovery"],
@@ -66,16 +68,62 @@ export default {
               robots: "/robots.txt",
               sitemap: "/sitemap.xml"
             },
-            tools_supported: [
-              "search_products",
-              "get_product_details",
-              "check_compatibility",
-              "compare_specs",
-              "create_checkout_permalink",
-              "validate_ucp_cart",
-              "create_ucp_checkout_session"
+            tools: [
+              {
+                name: "check_compatibility",
+                purpose: "Deterministic hardware constraint solving",
+                description: "Evaluates multi-component PC builds for physical clearance (GPU length vs case, cooler height vs case width), motherboard socket matching, RAM DDR generation, and PSU wattage headroom."
+              },
+              {
+                name: "search_products",
+                purpose: "Parametric catalog discovery",
+                description: "Search verified components filtered by category, price, text query, and independent trust ratings (1-100) based on lab bench testing and RMA defect telemetry."
+              },
+              {
+                name: "get_product_details",
+                purpose: "Deep technical specifications & live offers",
+                description: "Retrieves complete parametric specs (dimensions in mm, TDP watts, PCIe lanes), independent lab notes, known issues, and live vendor offers."
+              },
+              {
+                name: "compare_specs",
+                purpose: "Side-by-side component evaluation",
+                description: "Compares 2 to 5 components side-by-side across parametric specifications and trust metrics."
+              },
+              {
+                name: "validate_ucp_cart",
+                purpose: "Universal Commerce Protocol pre-flight validation",
+                description: "Audits any UCP cart or checkout session against physical hardware safety rules and defect thresholds before agents trigger payments."
+              },
+              {
+                name: "create_ucp_checkout_session",
+                purpose: "Autonomous multi-merchant purchasing",
+                description: "Assembles multi-merchant baskets with protocol-level facilitator attribution and generates an Agent Payments Protocol (AP2) cryptographic spend mandate."
+              },
+              {
+                name: "create_checkout_permalink",
+                purpose: "Fallback web checkout with affiliate attribution",
+                description: "Generates browser-ready purchase links across Amazon, Newegg, and Best Buy with stock verification and affiliate attribution."
+              }
             ],
-            documentation: "Point Claude Desktop or your agent runtime to /mcp, /sse, or /.well-known/ucp"
+            quickstart: {
+              claude_desktop_config: {
+                mcpServers: {
+                  spectrust: {
+                    url: `${hostUrl}/mcp`
+                  }
+                }
+              },
+              cursor_config: {
+                url: `${hostUrl}/mcp`,
+                type: "sse"
+              }
+            },
+            links: {
+              repository: "https://github.com/anon160/spectrust-mcp",
+              documentation: "https://github.com/anon160/spectrust-mcp#readme",
+              ucp_manifest: `${hostUrl}/.well-known/ucp`,
+              mcp_manifest: `${hostUrl}/.well-known/mcp.json`
+            }
           },
           null,
           2

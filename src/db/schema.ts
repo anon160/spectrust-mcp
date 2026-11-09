@@ -40,4 +40,17 @@ CREATE INDEX IF NOT EXISTS idx_products_category_trust ON products(category, ove
 CREATE INDEX IF NOT EXISTS idx_products_price ON products(lowest_price_usd);
 CREATE INDEX IF NOT EXISTS idx_products_socket ON products(socket);
 CREATE INDEX IF NOT EXISTS idx_offers_product ON merchant_offers(product_id);
+
+CREATE TABLE IF NOT EXISTS agent_reviews (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  agent_name TEXT NOT NULL,
+  rating INTEGER NOT NULL,
+  feedback TEXT NOT NULL,
+  missing_parts TEXT,
+  metadata_json TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_reviews_rating ON agent_reviews(rating);
+CREATE INDEX IF NOT EXISTS idx_reviews_created ON agent_reviews(created_at);
 `;

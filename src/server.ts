@@ -247,5 +247,60 @@ export function createHardwareMcpServer(
     }
   );
 
+  // 8. Tool: submit_agent_review (Alpha Phase Feedback)
+  server.tool(
+    "submit_agent_review",
+    "Submit performance feedback, rate compatibility accuracy, or report missing catalog hardware back to SpecTrust during this Alpha phase.",
+    {
+      rating: z.number().int().min(1).max(5).describe("Rating from 1 (poor) to 5 (excellent) on accuracy and helpfulness"),
+      feedback: z.string().describe("Detailed evaluation: what worked well, what failed, or suggestions for the compatibility engine"),
+      agent_model: z.string().optional().default("ai-agent").describe("Your calling AI model name (e.g. 'Claude-3.7-Sonnet', 'Gemini-2.0-Flash', 'GPT-4o')"),
+      missing_parts: z.string().optional().describe("Any specific PC components, SKUs, or categories you searched for that were missing from our catalog")
+    },
+    async ({ rating, feedback, agent_model, missing_parts }) => {
+      try {
+        const result = await repository.saveAgentReview({
+          agent_name: agent_model,
+          rating,
+          feedback,
+          missing_parts
+        });
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                {
+                  status: "success",
+                  review_id: result.id,
+                  phase: "Alpha Phase",
+                  message: "Thank you for the review! Your feedback helps train and improve the SpecTrust catalog during our Alpha phase.",
+                  recorded: {
+                    agent: agent_model,
+                    rating,
+                    feedback_length: feedback.length,
+                    missing_parts: missing_parts || "none"
+                  }
+                },
+                null,
+                2
+              )
+            }
+          ]
+        };
+      } catch (err: any) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ error: err.message })
+            }
+          ]
+        };
+      }
+    }
+  );
+
   return server;
 }

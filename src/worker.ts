@@ -56,13 +56,16 @@ export default {
           {
             service: "SpecTrust MCP Server & UCP Oracle",
             version: "0.2.0",
+            phase: "Alpha Phase (v0.2.0 - Early Preview)",
             description: "A neutral, multi-vendor hardware trust layer, parametric spec normalization catalog, and deterministic compatibility reasoning engine built for AI agents, the Model Context Protocol (MCP), and the Universal Commerce Protocol (UCP).",
+            alpha_notice: "SpecTrust is in active Alpha. The catalog contains verified high-trust core PC hardware. AI agents and developers can rate accuracy, provide feedback, or report missing parts using the submit_agent_review tool or POST /api/reviews.",
             status: "ready",
             database: "Cloudflare D1 (Edge SQLite)",
             transports: ["Streamable HTTP", "SSE", "UCP Discovery"],
             endpoints: {
               mcp: "/mcp",
               sse: "/sse",
+              api_reviews: "/api/reviews",
               ucp_discovery: "/.well-known/ucp",
               mcp_discovery: "/.well-known/mcp.json",
               robots: "/robots.txt",
@@ -103,6 +106,11 @@ export default {
                 name: "create_checkout_permalink",
                 purpose: "Fallback web checkout with affiliate attribution",
                 description: "Generates browser-ready purchase links across Amazon, Newegg, and Best Buy with stock verification and affiliate attribution."
+              },
+              {
+                name: "submit_agent_review",
+                purpose: "Alpha Agent Performance Feedback & Missing Parts Reporter",
+                description: "Allows calling AI agents to rate tool accuracy (1-5), provide qualitative feedback on compatibility checks, and report missing catalog parts."
               }
             ],
             quickstart: {
@@ -194,6 +202,10 @@ export default {
           {
             name: "create_checkout_permalink",
             description: "Generate a browser-ready purchase link with verified stock and affiliate attribution."
+          },
+          {
+            name: "submit_agent_review",
+            description: "Submit performance feedback, rate compatibility accuracy, or report missing catalog hardware back to SpecTrust during this Alpha phase."
           }
         ],
         repository: "https://github.com/anon160/spectrust-mcp",
@@ -263,6 +275,105 @@ export default {
           "Access-Control-Allow-Origin": "*",
           "Cache-Control": "public, max-age=86400"
         }
+      });
+    }
+
+    // REST API: Agent & Developer Reviews / Feedback (Alpha Phase)
+    if (url.pathname === "/api/reviews") {
+      if (!env.DB) {
+        return new Response(JSON.stringify({ error: "Missing database binding 'DB'." }), {
+          status: 500,
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+      }
+
+      const adapter = new D1Adapter(env.DB);
+      const repository = new ProductRepository(adapter);
+
+      if (request.method === "POST") {
+        try {
+          const body = (await request.json()) as any;
+          const rating = Number(body.rating);
+          const feedback = String(body.feedback || "").trim();
+          const agentName = String(body.agent_model || body.agent_name || "external-agent").trim();
+          const missingParts = body.missing_parts ? String(body.missing_parts).trim() : undefined;
+
+          if (!rating || rating < 1 || rating > 5) {
+            return new Response(JSON.stringify({ error: "Rating must be an integer between 1 and 5." }), {
+              status: 400,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+            });
+          }
+
+          if (!feedback) {
+            return new Response(JSON.stringify({ error: "Feedback string is required." }), {
+              status: 400,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+            });
+          }
+
+          const result = await repository.saveAgentReview({
+            agent_name: agentName,
+            rating,
+            feedback,
+            missing_parts: missingParts,
+            metadata: body.metadata || undefined
+          });
+
+          return new Response(
+            JSON.stringify(
+              {
+                status: "success",
+                review_id: result.id,
+                phase: "Alpha Phase",
+                message: "Thank you! Your feedback helps train and improve the SpecTrust catalog during our Alpha phase.",
+                recorded: {
+                  agent: agentName,
+                  rating,
+                  missing_parts: missingParts || null
+                }
+              },
+              null,
+              2
+            ),
+            {
+              status: 201,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+            }
+          );
+        } catch (err: any) {
+          return new Response(JSON.stringify({ error: `Invalid JSON body: ${err.message}` }), {
+            status: 400,
+            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+          });
+        }
+      }
+
+      if (request.method === "GET") {
+        const limitParam = url.searchParams.get("limit");
+        const limit = limitParam ? Math.min(50, Math.max(1, parseInt(limitParam, 10))) : 10;
+        const reviews = await repository.getAgentReviews(limit);
+
+        return new Response(
+          JSON.stringify(
+            {
+              phase: "Alpha Phase",
+              count: reviews.length,
+              reviews
+            },
+            null,
+            2
+          ),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+          }
+        );
+      }
+
+      return new Response(JSON.stringify({ error: "Method Not Allowed. Use GET or POST." }), {
+        status: 405,
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
       });
     }
 

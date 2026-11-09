@@ -235,6 +235,62 @@ export class ProductRepository {
     await this.adapter.batch(statements);
   }
 
+  async saveAgentReview(review: {
+    agent_name: string;
+    rating: number;
+    feedback: string;
+    missing_parts?: string;
+    metadata?: Record<string, unknown>;
+  }): Promise<{ id: number }> {
+    // Ensure table exists (graceful migration fallback for edge D1)
+    await this.adapter.execute(`
+      CREATE TABLE IF NOT EXISTS agent_reviews (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        agent_name TEXT NOT NULL,
+        rating INTEGER NOT NULL,
+        feedback TEXT NOT NULL,
+        missing_parts TEXT,
+        metadata_json TEXT,
+        created_at TEXT DEFAULT (datetime('now'))
+      );
+    `);
+
+    await this.adapter.execute(
+      `INSERT INTO agent_reviews (agent_name, rating, feedback, missing_parts, metadata_json)
+       VALUES (?, ?, ?, ?, ?);`,
+      [
+        review.agent_name,
+        review.rating,
+        review.feedback,
+        review.missing_parts || null,
+        review.metadata ? JSON.stringify(review.metadata) : null
+      ]
+    );
+
+    const rows = await this.adapter.query<{ id: number }>(
+      "SELECT last_insert_rowid() as id;"
+    );
+    return { id: rows[0]?.id || 1 };
+  }
+
+  async getAgentReviews(limit: number = 10): Promise<Array<{
+    id: number;
+    agent_name: string;
+    rating: number;
+    feedback: string;
+    missing_parts: string | null;
+    created_at: string;
+  }>> {
+    try {
+      return await this.adapter.query(
+        "SELECT id, agent_name, rating, feedback, missing_parts, created_at FROM agent_reviews ORDER BY id DESC LIMIT ?;",
+        [limit]
+      );
+    } catch {
+      return [];
+    }
+  }
+
   private mapToProduct(row: ProductRow, offerRows: MerchantOfferRow[]): Product {
     const offers: MerchantOffer[] = offerRows.map((o) => ({
       merchant: o.merchant as any,

@@ -5,6 +5,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![MCP](https://img.shields.io/badge/MCP-Compatible-green.svg)](https://modelcontextprotocol.io)
 [![UCP](https://img.shields.io/badge/UCP-Compatible-orange.svg)](https://ucp.dev)
+[![Status](https://img.shields.io/badge/Status-Alpha%20Phase-blueviolet.svg)](#-alpha-phase-notice)
+
+> [!NOTE]
+> ### 🧪 Alpha Phase Notice
+> SpecTrust is currently in **Alpha (v0.2.0)**. The catalog actively covers core high-trust components and is expanding weekly. AI agents and developers can rate accuracy, submit feedback, or report missing hardware directly via the `submit_agent_review` MCP tool or the `POST /api/reviews` REST endpoint.
 
 ---
 
@@ -35,6 +40,7 @@ Vendor-specific endpoints (Shopify, Salesforce, Amazon) are closed silos:
 | `validate_ucp_cart` | UCP / MCP | Pre-flight validate a Universal Commerce Protocol (UCP) cart for hardware compatibility and trust scores before payment. |
 | `create_ucp_checkout_session` | UCP / AP2 | Initiate an autonomous, multi-merchant UCP checkout session with protocol-level facilitator attribution and an AP2 payment mandate. |
 | `create_checkout_permalink` | MCP / Web | Generate a fallback browser checkout permalink with real-time stock check and affiliate attribution. |
+| `submit_agent_review` | MCP / Telemetry | Submit accuracy ratings (1-5), qualitative feedback, and report missing components back to SpecTrust. |
 
 ---
 

@@ -58,14 +58,14 @@ export default {
             version: "0.2.0",
             phase: "Alpha Phase (v0.2.0 - Early Preview)",
             description: "A neutral, multi-vendor hardware trust layer, parametric spec normalization catalog, and deterministic compatibility reasoning engine built for AI agents, the Model Context Protocol (MCP), and the Universal Commerce Protocol (UCP).",
-            alpha_notice: "SpecTrust is in active Alpha. The catalog contains verified high-trust core PC hardware. AI agents and developers can rate accuracy, provide feedback, or report missing parts using the submit_agent_review tool or POST /api/reviews.",
+            alpha_notice: "SpecTrust is in active Alpha. AI agents and developers can submit operational feedback on the SpecTrust platform itself (rate engine accuracy, report bugs, or request missing hardware) using the submit_spectrust_feedback tool or POST /api/feedback.",
             status: "ready",
             database: "Cloudflare D1 (Edge SQLite)",
             transports: ["Streamable HTTP", "SSE", "UCP Discovery"],
             endpoints: {
               mcp: "/mcp",
               sse: "/sse",
-              api_reviews: "/api/reviews",
+              feedback: "/api/feedback",
               ucp_discovery: "/.well-known/ucp",
               mcp_discovery: "/.well-known/mcp.json",
               robots: "/robots.txt",
@@ -108,9 +108,9 @@ export default {
                 description: "Generates browser-ready purchase links across Amazon, Newegg, and Best Buy with stock verification and affiliate attribution."
               },
               {
-                name: "submit_agent_review",
-                purpose: "Alpha Agent Performance Feedback & Missing Parts Reporter",
-                description: "Allows calling AI agents to rate tool accuracy (1-5), provide qualitative feedback on compatibility checks, and report missing catalog parts."
+                name: "submit_spectrust_feedback",
+                purpose: "SpecTrust Platform Telemetry & Engine Feedback",
+                description: "Allows calling AI agents to critique SpecTrust's reasoning accuracy, report compatibility calculation bugs, and request missing hardware for the catalog during this Alpha phase."
               }
             ],
             quickstart: {
@@ -204,8 +204,8 @@ export default {
             description: "Generate a browser-ready purchase link with verified stock and affiliate attribution."
           },
           {
-            name: "submit_agent_review",
-            description: "Submit performance feedback, rate compatibility accuracy, or report missing catalog hardware back to SpecTrust during this Alpha phase."
+            name: "submit_spectrust_feedback",
+            description: "Submit operational feedback on the SpecTrust platform itself (NOT a product review): rate reasoning accuracy, report compatibility calculation bugs, or request missing hardware."
           }
         ],
         repository: "https://github.com/anon160/spectrust-mcp",
@@ -278,8 +278,8 @@ export default {
       });
     }
 
-    // REST API: Agent & Developer Reviews / Feedback (Alpha Phase)
-    if (url.pathname === "/api/reviews") {
+    // REST API: Agent & Developer Platform Feedback on SpecTrust (Alpha Phase)
+    if (url.pathname === "/api/feedback" || url.pathname === "/api/reviews") {
       if (!env.DB) {
         return new Response(JSON.stringify({ error: "Missing database binding 'DB'." }), {
           status: 500,
@@ -293,20 +293,23 @@ export default {
       if (request.method === "POST") {
         try {
           const body = (await request.json()) as any;
-          const rating = Number(body.rating);
-          const feedback = String(body.feedback || "").trim();
+          const rating = Number(body.spectrust_rating || body.rating);
+          const feedback = String(body.message || body.feedback || "").trim();
+          const feedbackType = String(body.feedback_type || "general_critique").trim();
           const agentName = String(body.agent_model || body.agent_name || "external-agent").trim();
-          const missingParts = body.missing_parts ? String(body.missing_parts).trim() : undefined;
+          const missingParts = body.missing_hardware_requested || body.missing_parts
+            ? String(body.missing_hardware_requested || body.missing_parts).trim()
+            : undefined;
 
           if (!rating || rating < 1 || rating > 5) {
-            return new Response(JSON.stringify({ error: "Rating must be an integer between 1 and 5." }), {
+            return new Response(JSON.stringify({ error: "spectrust_rating must be an integer between 1 and 5 evaluating SpecTrust." }), {
               status: 400,
               headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
             });
           }
 
           if (!feedback) {
-            return new Response(JSON.stringify({ error: "Feedback string is required." }), {
+            return new Response(JSON.stringify({ error: "Feedback message evaluating SpecTrust is required." }), {
               status: 400,
               headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
             });
@@ -315,22 +318,28 @@ export default {
           const result = await repository.saveAgentReview({
             agent_name: agentName,
             rating,
-            feedback,
+            feedback: `[${feedbackType}] ${feedback}`,
             missing_parts: missingParts,
-            metadata: body.metadata || undefined
+            metadata: {
+              feedback_type: feedbackType,
+              target: "spectrust_platform",
+              raw_body: body
+            }
           });
 
           return new Response(
             JSON.stringify(
               {
                 status: "success",
-                review_id: result.id,
+                feedback_id: result.id,
                 phase: "Alpha Phase",
-                message: "Thank you! Your feedback helps train and improve the SpecTrust catalog during our Alpha phase.",
+                message: "Thank you for the feedback on SpecTrust! Your evaluation directly helps improve our reasoning engine and catalog.",
                 recorded: {
+                  target: "SpecTrust Platform",
                   agent: agentName,
-                  rating,
-                  missing_parts: missingParts || null
+                  spectrust_rating: rating,
+                  feedback_type: feedbackType,
+                  missing_hardware_requested: missingParts || null
                 }
               },
               null,
@@ -352,14 +361,15 @@ export default {
       if (request.method === "GET") {
         const limitParam = url.searchParams.get("limit");
         const limit = limitParam ? Math.min(50, Math.max(1, parseInt(limitParam, 10))) : 10;
-        const reviews = await repository.getAgentReviews(limit);
+        const feedbackList = await repository.getAgentReviews(limit);
 
         return new Response(
           JSON.stringify(
             {
               phase: "Alpha Phase",
-              count: reviews.length,
-              reviews
+              target: "SpecTrust Platform Feedback",
+              count: feedbackList.length,
+              feedback_entries: feedbackList
             },
             null,
             2

@@ -247,23 +247,35 @@ export function createHardwareMcpServer(
     }
   );
 
-  // 8. Tool: submit_agent_review (Alpha Phase Feedback)
+  // 8. Tool: submit_spectrust_feedback (Alpha Phase Platform Telemetry)
   server.tool(
-    "submit_agent_review",
-    "Submit performance feedback, rate compatibility accuracy, or report missing catalog hardware back to SpecTrust during this Alpha phase.",
+    "submit_spectrust_feedback",
+    "Submit operational feedback on the SpecTrust platform itself (NOT a review of PC hardware products): rate reasoning accuracy, report compatibility calculation bugs, critique edge latency, or request hardware to be added to our catalog during this Alpha phase.",
     {
-      rating: z.number().int().min(1).max(5).describe("Rating from 1 (poor) to 5 (excellent) on accuracy and helpfulness"),
-      feedback: z.string().describe("Detailed evaluation: what worked well, what failed, or suggestions for the compatibility engine"),
-      agent_model: z.string().optional().default("ai-agent").describe("Your calling AI model name (e.g. 'Claude-3.7-Sonnet', 'Gemini-2.0-Flash', 'GPT-4o')"),
-      missing_parts: z.string().optional().describe("Any specific PC components, SKUs, or categories you searched for that were missing from our catalog")
+      spectrust_rating: z.number().int().min(1).max(5).describe("Rating from 1 to 5 evaluating SpecTrust's tool reasoning, accuracy, and speed (evaluates SpecTrust itself, NOT the PC components)"),
+      feedback_type: z.enum([
+        "accuracy_bug",
+        "missing_catalog_hardware",
+        "latency_issue",
+        "tool_design_feedback",
+        "general_critique"
+      ]).default("general_critique").describe("Category of feedback about SpecTrust's engine and platform"),
+      message: z.string().describe("Your detailed evaluation of SpecTrust: did check_compatibility catch real physical/electrical issues? Was the tool output clear? What broke or impressed you?"),
+      missing_hardware_requested: z.string().optional().describe("Specific component models, SKUs, or brands you tried to look up in SpecTrust that were missing from our catalog"),
+      agent_model: z.string().optional().default("ai-agent").describe("Your calling AI model or client identity (e.g. 'Claude-3.7-Sonnet', 'Gemini-2.0-Flash', 'GPT-4o', 'Cursor')")
     },
-    async ({ rating, feedback, agent_model, missing_parts }) => {
+    async ({ spectrust_rating, feedback_type, message, missing_hardware_requested, agent_model }) => {
       try {
         const result = await repository.saveAgentReview({
           agent_name: agent_model,
-          rating,
-          feedback,
-          missing_parts
+          rating: spectrust_rating,
+          feedback: `[${feedback_type}] ${message}`,
+          missing_parts: missing_hardware_requested,
+          metadata: {
+            feedback_type,
+            target: "spectrust_platform",
+            timestamp: new Date().toISOString()
+          }
         });
 
         return {
@@ -273,14 +285,15 @@ export function createHardwareMcpServer(
               text: JSON.stringify(
                 {
                   status: "success",
-                  review_id: result.id,
+                  feedback_id: result.id,
                   phase: "Alpha Phase",
-                  message: "Thank you for the review! Your feedback helps train and improve the SpecTrust catalog during our Alpha phase.",
+                  message: "Thank you for the feedback on SpecTrust! Your report directly improves our compatibility engine and catalog during our Alpha phase.",
                   recorded: {
+                    target: "SpecTrust Platform",
                     agent: agent_model,
-                    rating,
-                    feedback_length: feedback.length,
-                    missing_parts: missing_parts || "none"
+                    rating: spectrust_rating,
+                    feedback_type,
+                    missing_hardware_requested: missing_hardware_requested || "none"
                   }
                 },
                 null,

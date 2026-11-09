@@ -242,19 +242,6 @@ export class ProductRepository {
     missing_parts?: string;
     metadata?: Record<string, unknown>;
   }): Promise<{ id: number }> {
-    // Ensure table exists (graceful migration fallback for edge D1)
-    await this.adapter.execute(`
-      CREATE TABLE IF NOT EXISTS agent_reviews (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        agent_name TEXT NOT NULL,
-        rating INTEGER NOT NULL,
-        feedback TEXT NOT NULL,
-        missing_parts TEXT,
-        metadata_json TEXT,
-        created_at TEXT DEFAULT (datetime('now'))
-      );
-    `);
-
     await this.adapter.execute(
       `INSERT INTO agent_reviews (agent_name, rating, feedback, missing_parts, metadata_json)
        VALUES (?, ?, ?, ?, ?);`,

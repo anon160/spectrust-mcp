@@ -93,12 +93,17 @@ Agents and clients can connect to the hosted SpecTrust instance via **Streamable
 
 ---
 
-## 🧪 Testing
+## 🧪 Testing & Local CI/CD Pipeline
+
+SpecTrust includes an automated **Local CI/CD Pipeline** that prevents broken code from ever being pushed or deployed:
+
+* **Automatic Pre-Push Gatekeeper (`.git/hooks/pre-push`):** Whenever you run `git push`, Git automatically runs the full build and test suite. If any unit test fails, the push is aborted.
+* **1-Command Ship (`npm run ship`):** Automatically runs TypeScript build, executes all 13 unit tests, pushes to GitHub, and deploys to Cloudflare Workers in one atomic command.
 
 ```bash
-npm run build
-npm test         # Unit & database test suite
-npm run simulate # End-to-end agent simulation
+npm run ci       # Run local CI verification (build + test suite)
+npm run ship     # Atomic 1-command pipeline: Build -> Test -> Git Push -> Edge Deploy
+npm run simulate # End-to-end agent simulation session
 ```
 
 ---

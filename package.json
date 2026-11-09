@@ -12,6 +12,8 @@
   ],
   "scripts": {
     "build": "tsc",
+    "ci": "npm run build && npm test",
+    "ship": "npm run build && npm test && git push origin master:main && wrangler deploy",
     "start": "node dist/cli.js",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",

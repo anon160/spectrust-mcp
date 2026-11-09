@@ -61,7 +61,10 @@ export default {
             endpoints: {
               mcp: "/mcp",
               sse: "/sse",
-              ucp_discovery: "/.well-known/ucp"
+              ucp_discovery: "/.well-known/ucp",
+              mcp_discovery: "/.well-known/mcp.json",
+              robots: "/robots.txt",
+              sitemap: "/sitemap.xml"
             },
             tools_supported: [
               "search_products",
@@ -96,6 +99,121 @@ export default {
           "Content-Type": "application/json",
           "Access-Control-Allow-Origin": "*",
           "Cache-Control": "public, max-age=3600"
+        }
+      });
+    }
+
+    // Standard MCP 1.0 Discovery Manifest (for AI Crawlers and Agents)
+    if (url.pathname === "/.well-known/mcp.json" || url.pathname === "/.well-known/mcp") {
+      const hostUrl = `${url.protocol}//${url.host}`;
+      const mcpManifest = {
+        $schema: "https://modelcontextprotocol.io/schemas/mcp-discovery.json",
+        name: "SpecTrust",
+        description: "Neutral hardware trust, parametric spec normalization, compatibility reasoning, and UCP commerce oracle for AI agents.",
+        version: "0.2.0",
+        endpoint: `${hostUrl}/mcp`,
+        transports: ["streamable_http", "sse"],
+        capabilities: {
+          tools: true,
+          prompts: false,
+          resources: false
+        },
+        tools: [
+          {
+            name: "search_products",
+            description: "Search verified PC hardware components filtered by category, price, text query, and trust score."
+          },
+          {
+            name: "get_product_details",
+            description: "Retrieve complete parametric specs, independent test notes, known issues, and live vendor offers."
+          },
+          {
+            name: "check_compatibility",
+            description: "Analyze component IDs for physical clearance, motherboard socket matching, and PSU headroom."
+          },
+          {
+            name: "compare_specs",
+            description: "Side-by-side spec and trust metric comparison between 2 to 5 products."
+          },
+          {
+            name: "validate_ucp_cart",
+            description: "Pre-flight validate a Universal Commerce Protocol (UCP) cart for hardware compatibility and trust scores before payment."
+          },
+          {
+            name: "create_ucp_checkout_session",
+            description: "Initiate an autonomous multi-merchant UCP checkout session with an AP2 payment mandate."
+          },
+          {
+            name: "create_checkout_permalink",
+            description: "Generate a browser-ready purchase link with verified stock and affiliate attribution."
+          }
+        ],
+        repository: "https://github.com/anon160/spectrust-mcp",
+        documentation: "https://github.com/anon160/spectrust-mcp#readme"
+      };
+
+      return new Response(JSON.stringify(mcpManifest, null, 2), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Cache-Control": "public, max-age=3600"
+        }
+      });
+    }
+
+    // Robots.txt: Welcomes AI crawlers (GPTBot, ClaudeBot, PerplexityBot) and points to sitemap
+    if (url.pathname === "/robots.txt") {
+      const hostUrl = `${url.protocol}//${url.host}`;
+      const robots = [
+        "User-agent: *",
+        "Allow: /",
+        `Sitemap: ${hostUrl}/sitemap.xml`
+      ].join("\n");
+
+      return new Response(robots, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Access-Control-Allow-Origin": "*",
+          "Cache-Control": "public, max-age=86400"
+        }
+      });
+    }
+
+    // Sitemap.xml: Machine-readable URL catalog for AI crawlers
+    if (url.pathname === "/sitemap.xml") {
+      const hostUrl = `${url.protocol}//${url.host}`;
+      const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${hostUrl}/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>${hostUrl}/.well-known/mcp.json</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>${hostUrl}/.well-known/ucp</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>${hostUrl}/mcp</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+</urlset>`;
+
+      return new Response(sitemap, {
+        status: 200,
+        headers: {
+          "Content-Type": "application/xml; charset=utf-8",
+          "Access-Control-Allow-Origin": "*",
+          "Cache-Control": "public, max-age=86400"
         }
       });
     }
